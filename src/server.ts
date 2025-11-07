@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { getLocalIp } from "./utils/getLocalIp";
 import { connectDB } from "./config/db";
+import { User } from "./models/user";
 
 const httpServer = createServer(app)
 const ip = getLocalIp()
@@ -23,14 +24,28 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 io.on("connection", (socket) => {
-    const username = socket.handshake.query.username;
-    console.log(`${username ? `👤 ${username} connected 🟢` : `🟢 Client connected`}`);
+    console.log("🟢 Client connected");
 
     socket.on("disconnect", () => {
-        console.log(`${username ? `👤 ${username} disconnected 🔴` : `🔴 Client disconnected`}`);
+        console.log("🔴 Client disconnected");
     })
 })
 
 httpServer.listen(port, () => {
     console.log(`Server started on ${ip}:${port}`);
 })
+
+const addCityReviewFieldToOldUsers = async () => {
+    try {
+        const users = await User.find({ cityReview: { $exists: false } });
+
+        for (const user of users) {
+            user.cityReview = [];
+            await user.save();
+        }
+
+        console.log(`✅ Updated ${users.length} users with cityReview field.`);
+    } catch (err) {
+        console.error("❌ Error adding cityReview field:", err);
+    }
+};
