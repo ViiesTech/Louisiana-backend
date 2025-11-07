@@ -1,0 +1,1 @@
+export const toLowerEmail = (email: string) => email.toLowerCase();
