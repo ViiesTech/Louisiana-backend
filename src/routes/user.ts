@@ -1,15 +1,32 @@
 import { Router } from "express";
 import { IsAuth } from "../middleware/isAuth";
-import { addCityReview, deleteCityReview, getCities, updateCityReview } from "../controllers/user";
+import { addBusinessReview, addCityReview, deleteBusinessReview, deleteCityReview, getBusiness, getCities, getTouristSpots, getUser, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview } from "../controllers/user";
 import { validate } from "../middleware/validate";
 import { cityReviewValidation } from "../validations/user";
 
 const router = Router()
 
-router.get("/getCities", IsAuth, getCities);
-router.get("/getCity/:cityId", IsAuth, getCities);
-router.post("/addCityReview/:cityId", IsAuth, validate(cityReviewValidation), addCityReview);
-router.put("/updateCityReview/:reviewId", IsAuth, validate(cityReviewValidation), updateCityReview);
-router.delete("/deleteCityReview/:reviewId", IsAuth, deleteCityReview);
+router.get("/cities/all", IsAuth, getCities);
+router.get("/city/:cityId", IsAuth, getCities);
+
+router.get("/touristSpots/all", IsAuth, getTouristSpots);
+router.get("/touristSpot/:touristSpotId", IsAuth, getTouristSpots);
+
+router.get("/businesses/all", IsAuth, getBusiness);
+router.get("/business/:businessId", IsAuth, getBusiness);
+
+router.post("/city/review/add/:cityId", IsAuth, validate(cityReviewValidation), addCityReview);
+router.put("/city/review/update/:reviewId", IsAuth, validate(cityReviewValidation), updateCityReview);
+router.delete("/city/review/delete/:reviewId", IsAuth, deleteCityReview);
+
+router.post("/business/review/add/:businessId", IsAuth, validate(cityReviewValidation), addBusinessReview);
+router.put("/business/review/update/:reviewId", IsAuth, validate(cityReviewValidation), updateBusinessReview);
+router.delete("/business/review/delete/:reviewId", IsAuth, deleteBusinessReview);
+
+router.patch("/city/favourite/:cityId", IsAuth, toggleFavouriteCities);
+router.patch("/business/favourite/:businessId", IsAuth, toggleFavouriteBusiness);
+router.patch("/city/visited/:cityId", IsAuth, toggleVisitedCities);
+
+router.get("/", IsAuth, getUser);
 
 export default router

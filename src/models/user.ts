@@ -11,7 +11,12 @@ const UserSchema = new Schema<IUser>({
     otpCode: { type: String, default: "" },
     otpExpiresAt: { type: Date, default: null },
     personalization: { type: [String], default: [] },
+    favouriteCities: [{ type: Schema.Types.ObjectId, ref: "City", default: [] }],
+    visitedCities: [{ type: Schema.Types.ObjectId, ref: "City", default: [] }],
+    favouriteBusinesses: [{ type: Schema.Types.ObjectId, ref: "Business", default: [] }],
     cityReview: [{ type: Schema.Types.ObjectId, ref: "CityReview", default: [] }],
+    businessReview: [{ type: Schema.Types.ObjectId, ref: "BusinessReview", default: [] }],
+    itineraries: [{ type: Schema.Types.ObjectId, ref: "Itineraries", default: [] }],
 }, { timestamps: true });
 
 export const User = mongoose.model<IUser>("User", UserSchema);

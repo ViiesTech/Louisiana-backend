@@ -81,7 +81,9 @@ export const signin = async (req: Request, res: Response) => {
         const payload = { _id: user._id.toString(), email: user.email };
         const token = await createJWT(payload);
 
-        const cleanUser = sanitizeUser(user);
+        const cleanUser = sanitizeUser(user, {
+            remove: ['cityReview', 'businessReview', 'favouriteBusinesses', 'favouriteCities', 'visitedCities']
+        });
 
         return res.status(200).json({
             success: true, message: "Signin successful!", user: cleanUser, token,

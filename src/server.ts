@@ -35,17 +35,19 @@ httpServer.listen(port, () => {
     console.log(`Server started on ${ip}:${port}`);
 })
 
-const addCityReviewFieldToOldUsers = async () => {
+const addFieldToOldUsers = async () => {
     try {
-        const users = await User.find({ cityReview: { $exists: false } });
+        const users = await User.find({ 
+            itineraries: { $exists: false }, 
+        });
 
         for (const user of users) {
-            user.cityReview = [];
+            user.itineraries = [];
             await user.save();
         }
 
-        console.log(`✅ Updated ${users.length} users with cityReview field.`);
+        console.log(`✅ Updated ${users.length} users with businessReview field.`);
     } catch (err) {
-        console.error("❌ Error adding cityReview field:", err);
+        console.error("❌ Error adding businessReview field:", err);
     }
 };
