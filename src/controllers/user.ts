@@ -9,10 +9,14 @@ import { BusinessReview } from "../models/businessReview";
 import mongoose from "mongoose";
 import { getUserPopulate } from "../utils/populateOption";
 import { sanitizeUser } from "../utils/sanitizeUser";
+import { Itineraries } from "../models/itineraries";
+import { cleanItinerariesPlaces } from "../utils/cleanItineraries";
+import { calculateDuration } from "../utils/calculateDuration";
+
 export const getCities = async (req: Request, res: Response) => {
     try {
         const { cityId } = req.params;
-        const { byRating } = req.query;
+        const { byRating, latitude, longitude, maxDistance } = req.query;
 
         if (cityId) {
             const city = await City.findById(cityId).populate({
@@ -35,6 +39,28 @@ export const getCities = async (req: Request, res: Response) => {
             });
         }
 
+        if (latitude && longitude) {
+            const distance = Number(maxDistance) || 5000; // default 5 km
+            const cities = await City.find({
+                location: {
+                    $near: {
+                        $geometry: { type: "Point", coordinates: [Number(longitude), Number(latitude)] },
+                        $maxDistance: distance,
+                    }
+                }
+            })
+                .populate({ path: 'review', select: '-city', populate: { path: 'user', select: 'name profile email' } })
+                .populate('touristSpot', '-city');
+
+            if (!cities.length) {
+                res.status(404).json({ success: false, message: "No cities found nearby." });
+                return
+            }
+
+            res.status(200).json({ success: true, message: "Cities fetched successfully!", cities });
+            return
+        }
+
         let cities;
 
         if (byRating === "true") {
@@ -46,9 +72,7 @@ export const getCities = async (req: Request, res: Response) => {
                 populate: {
                     path: 'user', select: 'name profile email'
                 }
-            })
-                .populate('touristSpot', '-city')
-                .sort({ createdAt: -1 });
+            }).populate('touristSpot', '-city').sort({ createdAt: -1 });
         }
 
         if (!cities.length) {
@@ -459,18 +483,138 @@ export const getUser = async (req: Request, res: Response) => {
     try {
         const _id = req._id;
 
-        const user = await User.findById(_id).populate(getUserPopulate);
+        const user = await User.findById(_id).populate(getUserPopulate).lean()
 
         if (!user) {
             res.status(404).json({ success: false, message: "User not found" });
             return
         }
 
+        user.itineraries = cleanItinerariesPlaces(user.itineraries, ["review", "touristSpot"]);
+
         const cleanUser = sanitizeUser(user)
 
-        res.status(200).json({ success: true, user:cleanUser, });
+        res.status(200).json({ success: true, user: cleanUser, });
 
     } catch (error) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const createItinerary = async (req: Request, res: Response) => {
+    try {
+        const _id = req._id
+        const { title, description, startDate, endDate, places } = req.body;
+
+        const duration = calculateDuration(startDate, endDate);
+
+        const newItinerary = await Itineraries.create({
+            title, description, startDate,
+            endDate, duration, places,
+        });
+
+        await User.findByIdAndUpdate(
+            _id, { $push: { itineraries: newItinerary._id } }, { new: true }
+        );
+
+        let populatedItinerary = await Itineraries.findById(newItinerary._id).populate({
+            path: "places.placeId",
+        }).lean()
+
+        if (populatedItinerary) {
+            const cleanedArray = cleanItinerariesPlaces([populatedItinerary], ["review", "touristSpot"]);
+            populatedItinerary = cleanedArray[0];
+        }
+
+
+        res.status(201).json({
+            success: true, message: "Itinerary created successfully!", itinerary: populatedItinerary,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const updateItinerary = async (req: Request, res: Response) => {
+    try {
+        const { itineraryId } = req.params;
+        const updates = req.body;
+
+        if (!itineraryId) {
+            res.status(400).json({ success: false, message: "Itinerary ID is required." });
+            return
+        }
+
+        const itinerary = await Itineraries.findById(itineraryId);
+        if (!itinerary) {
+            res.status(404).json({ success: false, message: "Itinerary not found." });
+            return
+        }
+
+        const allowedFields = ["title", "description", "startDate", "endDate", "places"];
+        allowedFields.forEach(field => {
+            if (updates[field] !== undefined) {
+                (itinerary as any)[field] = updates[field];
+            }
+        });
+
+        if (updates.startDate || updates.endDate) {
+            if (!itinerary.startDate || !itinerary.endDate) {
+                res.status(400).json({ success: false, message: "Start date and end date are required to calculate duration." });
+                return
+            }
+            itinerary.duration = calculateDuration(itinerary.startDate, itinerary.endDate);
+        }
+
+        const updatedItinerary = await itinerary.save();
+
+        let populatedItinerary = await Itineraries.findById(itineraryId).populate({ path: "places.placeId" }).lean();
+        if (populatedItinerary) {
+            const cleanedArray = cleanItinerariesPlaces([populatedItinerary], ["review", "touristSpot"]);
+            populatedItinerary = cleanedArray[0];
+        }
+
+        res.status(200).json({
+            success: true, message: "Itinerary updated successfully!", itinerary: populatedItinerary,
+        });
+
+    } catch (error: any) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const deleteItinerary = async (req: Request, res: Response) => {
+    try {
+        const _id = req._id;
+        const { itineraryId } = req.params;
+
+        if (!itineraryId) {
+            res.status(400).json({ success: false, message: "Itinerary ID is required." });
+            return
+        }
+
+        const deletedItinerary = await Itineraries.findByIdAndDelete(itineraryId);
+
+        if (!deletedItinerary) {
+            res.status(404).json({ success: false, message: "Itinerary not found." });
+            return
+        }
+
+        await User.findByIdAndUpdate(
+            _id, { $pull: { itineraries: itineraryId } }, { new: true }
+        );
+
+        res.status(200).json({
+            success: true, message: "Itinerary deleted successfully!",
+        });
+
+    } catch (error: any) {
         res.status(500).json({
             success: false, message: error instanceof Error ? error.message : "Internal Server Error",
         });

@@ -6,9 +6,13 @@ const TouristSpotSchema = new Schema<ITouristSpot>({
     city: { type: Schema.Types.ObjectId, ref: "City", required: true },
     description: { type: String },
     history: { type: String },
-    latitude: { type: Number, default: null },
-    longitude: { type: Number, default: null },
+    location: {
+        type: { type: String, enum: ["Point"], default: "Point" },
+        coordinates: { type: [Number], default: [0, 0] }
+    },
     gallery: { type: [String], default: [] },
 }, { timestamps: true });
+
+TouristSpotSchema.index({ location: "2dsphere" });
 
 export const TouristSpot = mongoose.model<ITouristSpot>("TouristSpot", TouristSpotSchema);

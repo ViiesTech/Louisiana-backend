@@ -1,3 +1,4 @@
+import { Document } from "mongoose";
 import { Types } from "mongoose";
 
 export interface IHour {
@@ -8,7 +9,7 @@ export interface IHour {
 }
 
 export interface IBusiness extends Document {
-    _id?: Types.ObjectId;
+    _id: Types.ObjectId;
     name: string;
     category: string;
     description?: string;
@@ -17,8 +18,9 @@ export interface IBusiness extends Document {
     email: string;
     website?: string;
     hours: IHour[];
-    latitude?: number | null;
-    longitude?: number | null;
+    location?: {
+        type: "Point"; coordinates: [number, number];
+    };
     status: "Active" | "Inactive";
     review: Types.ObjectId[];
     gallery?: string[];

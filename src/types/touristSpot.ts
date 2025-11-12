@@ -6,8 +6,9 @@ export interface ITouristSpot {
     city: Types.ObjectId;
     description?: string;
     history?: string;
-    latitude?: number | null;
-    longitude?: number | null;
+    location?: {
+        type: "Point"; coordinates: [number, number];
+    };
     gallery?: string[];
     createdAt?: Date;
     updatedAt?: Date;

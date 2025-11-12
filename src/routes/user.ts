@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { IsAuth } from "../middleware/isAuth";
-import { addBusinessReview, addCityReview, deleteBusinessReview, deleteCityReview, getBusiness, getCities, getTouristSpots, getUser, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview } from "../controllers/user";
+import { addBusinessReview, addCityReview, createItinerary, deleteBusinessReview, deleteCityReview, deleteItinerary, getBusiness, getCities, getTouristSpots, getUser, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview, updateItinerary } from "../controllers/user";
 import { validate } from "../middleware/validate";
-import { cityReviewValidation } from "../validations/user";
+import { cityReviewValidation, createItineraryValidation } from "../validations/user";
 
 const router = Router()
 
@@ -28,5 +28,9 @@ router.patch("/business/favourite/:businessId", IsAuth, toggleFavouriteBusiness)
 router.patch("/city/visited/:cityId", IsAuth, toggleVisitedCities);
 
 router.get("/", IsAuth, getUser);
+
+router.post("/itinerary/create", IsAuth, validate(createItineraryValidation), createItinerary);
+router.put("/itinerary/update/:itineraryId", IsAuth, updateItinerary);
+router.delete("/itinerary/delete/:itineraryId", IsAuth, deleteItinerary);
 
 export default router

@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface ICity extends Document {
-    _id?: mongoose.Types.ObjectId; 
+    _id: mongoose.Types.ObjectId;
     name: string;
     type: string;
     description?: string;
@@ -10,8 +10,9 @@ export interface ICity extends Document {
     phone?: number;
     website?: string;
     hours?: string;
-    latitude?: number | null;
-    longitude?: number | null;
+    location?: {
+        type: "Point"; coordinates: [number, number];
+    };
     review: mongoose.Types.ObjectId[];
     gallery: string[];
     touristSpot: mongoose.Types.ObjectId[];

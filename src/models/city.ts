@@ -10,11 +10,15 @@ const CitySchema = new Schema<ICity>({
     phone: { type: Number },
     website: { type: String },
     hours: { type: String },
-    latitude: { type: Number, default: null },
-    longitude: { type: Number, default: null },
+    location: {
+        type: { type: String, enum: ["Point"], default: "Point" },
+        coordinates: { type: [Number], default: [0, 0] }
+    },
     review: [{ type: Schema.Types.ObjectId, ref: "CityReview", default: [] }],
     gallery: { type: [String], default: [] },
     touristSpot: [{ type: Schema.Types.ObjectId, ref: "TouristSpot", default: [] }],
 }, { timestamps: true });
+
+CitySchema.index({ location: "2dsphere" });
 
 export const City = mongoose.model<ICity>("City", CitySchema);

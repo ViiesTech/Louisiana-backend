@@ -16,8 +16,13 @@ export const addCity = async (req: Request, res: Response) => {
         }
 
         const newCity = await City.create({
-            name, type, description, history, address, phone,
-            website, hours, latitude, longitude, gallery: gallery,
+            name, type, description, history, address,
+            website, hours, gallery: gallery, phone,
+            location: {
+                type: "Point",
+                coordinates: [longitude, latitude]
+            },
+
         });
 
         res.status(201).json({
@@ -34,13 +39,25 @@ export const addCity = async (req: Request, res: Response) => {
 export const updateCity = async (req: Request, res: Response) => {
     try {
         const { cityId } = req.params;
-        const updateData = req.body;
+        const { latitude, longitude, ...updateData } = req.body;
 
         const city = await City.findById(cityId);
         if (!city) {
             return res.status(404).json({
                 success: false, message: "*City not found."
             });
+        }
+
+        if (latitude !== undefined || longitude !== undefined) {
+            const currentCoords = city.location?.coordinates || [0, 0];
+
+            const newLongitude = longitude !== undefined ? parseFloat(longitude) : currentCoords[0];
+            const newLatitude = latitude !== undefined ? parseFloat(latitude) : currentCoords[1];
+
+            city.location = {
+                type: "Point",
+                coordinates: [newLongitude, newLatitude],
+            };
         }
 
         Object.keys(updateData).forEach((key) => {
@@ -62,8 +79,6 @@ export const updateCity = async (req: Request, res: Response) => {
         });
     }
 };
-
-
 export const addTouristSpot = async (req: Request, res: Response) => {
     try {
         const { name, city, description, history, latitude, longitude, gallery } = req.body
@@ -75,7 +90,11 @@ export const addTouristSpot = async (req: Request, res: Response) => {
             return
         }
         const newTouristSpot = await TouristSpot.create({
-            name, city, description, history, latitude, longitude, gallery
+            name, city, description, history, gallery,
+            location: {
+                type: "Point",
+                coordinates: [longitude, latitude],
+            },
         });
 
         existingCity.touristSpot.push(newTouristSpot._id);
@@ -107,7 +126,8 @@ export const updateTouristSpot = async (req: Request, res: Response) => {
             const newCity = await City.findById(city);
 
             if (!newCity) {
-                return res.status(404).json({ success: false, message: "New city not found." });
+                res.status(404).json({ success: false, message: "New city not found." });
+                return
             }
 
             if (oldCity) {
@@ -126,9 +146,18 @@ export const updateTouristSpot = async (req: Request, res: Response) => {
         if (name) existingSpot.name = name;
         if (description) existingSpot.description = description;
         if (history) existingSpot.history = history;
-        if (latitude) existingSpot.latitude = latitude;
-        if (longitude) existingSpot.longitude = longitude;
         if (gallery) existingSpot.gallery = gallery;
+
+        if (latitude !== undefined || longitude !== undefined) {
+            const currentCoords = existingSpot.location?.coordinates ?? [0, 0];
+            const newLongitude = longitude !== undefined ? parseFloat(longitude) : currentCoords[0];
+            const newLatitude = latitude !== undefined ? parseFloat(latitude) : currentCoords[1];
+
+            existingSpot.location = {
+                type: "Point",
+                coordinates: [newLongitude, newLatitude],
+            };
+        }
 
         await existingSpot.save();
 
@@ -186,9 +215,17 @@ export const addBusiness = async (req: Request, res: Response) => {
             return
         }
 
+        const location = {
+            type: "Point",
+            coordinates: [
+                longitude !== undefined ? parseFloat(longitude) : 0,
+                latitude !== undefined ? parseFloat(latitude) : 0
+            ]
+        };
+
         const newBusiness = await Business.create({
             name, category, description, address, phone, email,
-            website, hours, latitude, longitude, status, gallery
+            website, hours, location, status, gallery
         });
 
         res.status(201).json({
@@ -243,10 +280,19 @@ export const updateBusiness = async (req: Request, res: Response) => {
         existingBusiness.email = email ?? existingBusiness.email;
         existingBusiness.website = website ?? existingBusiness.website;
         existingBusiness.hours = hours ?? existingBusiness.hours;
-        existingBusiness.latitude = latitude ?? existingBusiness.latitude;
-        existingBusiness.longitude = longitude ?? existingBusiness.longitude;
         existingBusiness.status = status ?? existingBusiness.status;
         existingBusiness.gallery = gallery ?? existingBusiness.gallery;
+
+        if (latitude !== undefined || longitude !== undefined) {
+            const currentCoords = existingBusiness.location?.coordinates || [0, 0];
+            existingBusiness.location = {
+                type: "Point",
+                coordinates: [
+                    longitude !== undefined ? parseFloat(longitude) : currentCoords[0],
+                    latitude !== undefined ? parseFloat(latitude) : currentCoords[1],
+                ]
+            };
+        }
 
         await existingBusiness.save();
 
@@ -260,7 +306,6 @@ export const updateBusiness = async (req: Request, res: Response) => {
         });
     }
 };
-
 export const deleteBusiness = async (req: Request, res: Response) => {
     try {
         const { businessId } = req.params;

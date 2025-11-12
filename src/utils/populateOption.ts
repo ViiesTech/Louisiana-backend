@@ -19,5 +19,11 @@ export const getUserPopulate = [
     },
     {
         path: 'visitedCities', select: '-review -touristSpot'
+    },
+    {
+        path: "itineraries",
+        populate: {
+            path: "places.placeId",
+        },
     }
 ]

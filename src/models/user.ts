@@ -5,8 +5,13 @@ const UserSchema = new Schema<IUser>({
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    latitude: { type: Number, default: null },
-    longitude: { type: Number, default: null },
+    location: {
+        type: { type: String, enum: ["Point"], default: "Point" },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            default: [0, 0]
+        }
+    },
     profile: { type: String, default: "" },
     otpCode: { type: String, default: "" },
     otpExpiresAt: { type: Date, default: null },
@@ -18,5 +23,7 @@ const UserSchema = new Schema<IUser>({
     businessReview: [{ type: Schema.Types.ObjectId, ref: "BusinessReview", default: [] }],
     itineraries: [{ type: Schema.Types.ObjectId, ref: "Itineraries", default: [] }],
 }, { timestamps: true });
+
+UserSchema.index({ location: "2dsphere" });
 
 export const User = mongoose.model<IUser>("User", UserSchema);

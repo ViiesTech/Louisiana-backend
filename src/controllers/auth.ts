@@ -34,7 +34,10 @@ export const signup = async (req: Request, res: Response) => {
 
         const newUser = await User.create({
             username, email: lowerEmail, password: hashedPass,
-            latitude, longitude, profile: profileUrl, personalization
+            profile: profileUrl, personalization,
+            location: latitude !== undefined && longitude !== undefined
+                ? { type: "Point", coordinates: [longitude, latitude] }
+                : undefined,
         });
 
         const obj = {
@@ -44,7 +47,9 @@ export const signup = async (req: Request, res: Response) => {
 
         const token = await createJWT(obj);
 
-        const cleanUser = sanitizeUser(newUser);
+        const cleanUser = sanitizeUser(newUser, {
+            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries']
+        });
 
         res.status(201).json({
             message: "Signup successfully", success: true, user: cleanUser, token
@@ -82,7 +87,7 @@ export const signin = async (req: Request, res: Response) => {
         const token = await createJWT(payload);
 
         const cleanUser = sanitizeUser(user, {
-            remove: ['cityReview', 'businessReview', 'favouriteBusinesses', 'favouriteCities', 'visitedCities']
+            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries']
         });
 
         return res.status(200).json({
