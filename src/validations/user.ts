@@ -51,3 +51,14 @@ export const createItineraryValidation = Joi.object({
         "any.required": "Places are required."
     })
 });
+
+export const changePassValidation = Joi.object({
+  oldPassword: Joi.string().required().messages({
+    "any.required": "*oldPassword is required",
+    "string.empty": "*oldPassword is required",
+  }),
+  newPassword: Joi.string().min(6).max(30).required().messages({
+    "any.required": "*New password is required",
+    "string.min": "*New password must be at least 6 characters long",
+  }),
+});

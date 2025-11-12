@@ -22,6 +22,7 @@ const UserSchema = new Schema<IUser>({
     cityReview: [{ type: Schema.Types.ObjectId, ref: "CityReview", default: [] }],
     businessReview: [{ type: Schema.Types.ObjectId, ref: "BusinessReview", default: [] }],
     itineraries: [{ type: Schema.Types.ObjectId, ref: "Itineraries", default: [] }],
+    notifications: [{ type: Schema.Types.ObjectId, ref: "Notification", default: [] }],
 }, { timestamps: true });
 
 UserSchema.index({ location: "2dsphere" });

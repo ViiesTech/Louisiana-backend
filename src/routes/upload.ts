@@ -7,4 +7,5 @@ const router = Router();
 router.post("/single", upload.single("image"), uploadImage);
 router.post("/multiple", upload.array("images", 10), uploadMultipleImages);
 router.post("/media", upload.fields([{ name: "images", maxCount: 10 }, { name: "videos", maxCount: 3 }]), uploadMedia);
+
 export default router;

@@ -9,6 +9,7 @@ import { createOtp } from "../utils/createOtp";
 import { sendForgotPasswordEmail } from "../utils/sendForgotPasswordEmail";
 import { Guest } from "../models/guest";
 import { Admin } from "../models/admin";
+import { agenda } from "../jobs/agendaJobs";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -40,6 +41,12 @@ export const signup = async (req: Request, res: Response) => {
                 : undefined,
         });
 
+        agenda.schedule("in 10 seconds", "send welcome notification", {
+            userId: newUser._id.toString(),
+            username: newUser.username,
+            category: 'Info'
+        });
+
         const obj = {
             _id: newUser._id.toString(),
             email: newUser.email,
@@ -60,7 +67,6 @@ export const signup = async (req: Request, res: Response) => {
         });
     }
 };
-
 export const signin = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;

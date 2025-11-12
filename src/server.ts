@@ -6,10 +6,12 @@ import { Server } from "socket.io";
 import { getLocalIp } from "./utils/getLocalIp";
 import { connectDB } from "./config/db";
 import { User } from "./models/user";
+import { startAgenda } from "./config/agenda";
 
 const httpServer = createServer(app)
 const ip = getLocalIp()
 connectDB()
+startAgenda()
 
 const io = new Server(httpServer, {
     cors: {
@@ -38,11 +40,11 @@ httpServer.listen(port, () => {
 const addFieldToOldUsers = async () => {
     try {
         const users = await User.find({ 
-            itineraries: { $exists: false }, 
+            notifications: { $exists: false }, 
         });
 
         for (const user of users) {
-            user.itineraries = [];
+            user.notifications = [];
             await user.save();
         }
 
@@ -51,3 +53,4 @@ const addFieldToOldUsers = async () => {
         console.error("❌ Error adding businessReview field:", err);
     }
 };
+

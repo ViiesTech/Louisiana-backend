@@ -12,6 +12,8 @@ import { sanitizeUser } from "../utils/sanitizeUser";
 import { Itineraries } from "../models/itineraries";
 import { cleanItinerariesPlaces } from "../utils/cleanItineraries";
 import { calculateDuration } from "../utils/calculateDuration";
+import { verifyHashedPass } from "../utils/verifyHashedPass";
+import { createHashedPassword } from "../utils/createHashedPassword";
 
 export const getCities = async (req: Request, res: Response) => {
     try {
@@ -615,6 +617,97 @@ export const deleteItinerary = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const _id = req._id;
+        const { username, personalization, latitude, longitude } = req.body;
+
+        const user = await User.findById(_id);
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found." });
+            return;
+        }
+
+        let profileUrl = user.profile;
+        if (req.file) {
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+            profileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+        }
+
+        if (latitude !== undefined || longitude !== undefined) {
+            const currentLocation = user.location?.coordinates || [0, 0];
+
+            user.location = {
+                type: "Point",
+                coordinates: [
+                    longitude ?? currentLocation[0],
+                    latitude ?? currentLocation[1]
+                ]
+            };
+        }
+
+        user.username = username ?? user.username;
+        user.personalization = personalization ?? user.personalization;
+        user.profile = profileUrl;
+
+        await user.save();
+
+        const cleanUser = sanitizeUser(user, {
+            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries']
+        });
+
+        res.status(200).json({
+            success: true, message: "Profile updated successfully!", user: cleanUser
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const updatePassword = async (req: Request, res: Response) => {
+    try {
+        const _id = req._id;
+        const { oldPassword, newPassword } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(_id)) {
+            res.status(400).json({ success: false, message: "Invalid user ID." });
+            return
+        }
+
+        const user = await User.findById({ _id });
+        if (!user) {
+            res.status(404).json({
+                success: false, message: "User not found."
+            });
+            return
+        }
+
+        const isMatch = await verifyHashedPass(oldPassword, user.password);
+        if (!isMatch) {
+            res.status(400).json({
+                success: false, message: "*Invalid old password."
+            });
+            return
+        }
+
+        const hashedPass = await createHashedPassword(newPassword);
+        await User.findByIdAndUpdate(
+            { _id }, { password: hashedPass }, { new: true }
+        );
+
+        res.status(200).json({
+            success: true, message: "Password updated successfully."
+        });
+    } catch (error) {
         res.status(500).json({
             success: false, message: error instanceof Error ? error.message : "Internal Server Error",
         });
