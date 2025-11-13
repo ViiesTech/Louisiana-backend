@@ -9,7 +9,7 @@ import { createOtp } from "../utils/createOtp";
 import { sendForgotPasswordEmail } from "../utils/sendForgotPasswordEmail";
 import { Guest } from "../models/guest";
 import { Admin } from "../models/admin";
-import { agenda } from "../jobs/agendaJobs";
+import { agenda } from "../jobs/agendaInstance";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -55,7 +55,7 @@ export const signup = async (req: Request, res: Response) => {
         const token = await createJWT(obj);
 
         const cleanUser = sanitizeUser(newUser, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries']
+            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
         });
 
         res.status(201).json({
@@ -93,7 +93,7 @@ export const signin = async (req: Request, res: Response) => {
         const token = await createJWT(payload);
 
         const cleanUser = sanitizeUser(user, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries']
+            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
         });
 
         return res.status(200).json({

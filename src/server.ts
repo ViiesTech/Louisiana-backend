@@ -5,13 +5,12 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { getLocalIp } from "./utils/getLocalIp";
 import { connectDB } from "./config/db";
-import { User } from "./models/user";
-import { startAgenda } from "./config/agenda";
+import { loadAgendaJobs } from "./jobs/agendaLoader";
 
 const httpServer = createServer(app)
 const ip = getLocalIp()
 connectDB()
-startAgenda()
+loadAgendaJobs()
 
 const io = new Server(httpServer, {
     cors: {
@@ -36,21 +35,3 @@ io.on("connection", (socket) => {
 httpServer.listen(port, () => {
     console.log(`Server started on ${ip}:${port}`);
 })
-
-const addFieldToOldUsers = async () => {
-    try {
-        const users = await User.find({ 
-            notifications: { $exists: false }, 
-        });
-
-        for (const user of users) {
-            user.notifications = [];
-            await user.save();
-        }
-
-        console.log(`✅ Updated ${users.length} users with businessReview field.`);
-    } catch (err) {
-        console.error("❌ Error adding businessReview field:", err);
-    }
-};
-

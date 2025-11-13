@@ -1,15 +1,7 @@
-import Agenda, { Job } from "agenda";
-import { mongoUrl } from "../config/env";
+import { Agenda, Job } from "agenda";
 import { createNotification } from "../utils/createNotification ";
 
-export const agenda = new Agenda({
-    db: {
-        address: mongoUrl as string,
-        collection: "agendaJobs",
-    },
-});
-
-export const defineJobs = () => {
+export const defineNotificationJob = (agenda: Agenda) => {
     agenda.define("send welcome notification", async (job: Job) => {
         const { userId, username, category, data } = job.attrs.data;
         try {
@@ -21,10 +13,10 @@ export const defineJobs = () => {
                 data,
             });
 
-            console.log(`✅ Welcome notification sent to user: ${username} (${userId})`);
+            console.log(`✅ Welcome notification sent to user: ${username}`);
             await job.remove();
         } catch (error) {
-            console.error(`❌ Failed to send notification to user: ${username} (${userId})`, error);
+            console.error("❌ Error sending welcome notification:", error);
         }
     });
 };

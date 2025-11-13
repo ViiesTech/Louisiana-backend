@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { IsAuth } from "../middleware/isAuth";
-import { addBusinessReview, addCityReview, createItinerary, deleteBusinessReview, deleteCityReview, deleteItinerary, getBusiness, getCities, getTouristSpots, getUser, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview, updateItinerary, updatePassword, updateProfile } from "../controllers/user";
+import { addBusinessReview, addCityReview, createItinerary, deleteBusinessReview, deleteCityReview, deleteItinerary, getBusiness, getCities, getTouristSpots, getUser, markNotificationsAsRead, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview, updateItinerary, updatePassword, updateProfile } from "../controllers/user";
 import { validate } from "../middleware/validate";
 import { changePassValidation, cityReviewValidation, createItineraryValidation } from "../validations/user";
 import upload from "../middleware/multerConfig";
@@ -28,12 +28,13 @@ router.patch("/city/favourite/:cityId", IsAuth, toggleFavouriteCities);
 router.patch("/business/favourite/:businessId", IsAuth, toggleFavouriteBusiness);
 router.patch("/city/visited/:cityId", IsAuth, toggleVisitedCities);
 
-router.get("/", IsAuth, getUser);
-router.patch("/updateProfile", IsAuth, upload.single("profile"), updateProfile);
-router.patch("/updatePassword", IsAuth, validate(changePassValidation), updatePassword);
-
 router.post("/itinerary/create", IsAuth, validate(createItineraryValidation), createItinerary);
 router.put("/itinerary/update/:itineraryId", IsAuth, updateItinerary);
 router.delete("/itinerary/delete/:itineraryId", IsAuth, deleteItinerary);
+
+router.get("/", IsAuth, getUser);
+router.patch("/updateProfile", IsAuth, upload.single("profile"), updateProfile);
+router.patch("/updatePassword", IsAuth, validate(changePassValidation), updatePassword);
+router.put("/notifications/read", IsAuth , markNotificationsAsRead);
 
 export default router

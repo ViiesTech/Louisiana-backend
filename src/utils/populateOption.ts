@@ -25,5 +25,8 @@ export const getUserPopulate = [
         populate: {
             path: "places.placeId",
         },
+    },
+    {
+        path:'notifications', select:"-user"
     }
 ]

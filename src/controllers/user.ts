@@ -14,6 +14,7 @@ import { cleanItinerariesPlaces } from "../utils/cleanItineraries";
 import { calculateDuration } from "../utils/calculateDuration";
 import { verifyHashedPass } from "../utils/verifyHashedPass";
 import { createHashedPassword } from "../utils/createHashedPassword";
+import { Notification } from "../models/notification";
 
 export const getCities = async (req: Request, res: Response) => {
     try {
@@ -706,6 +707,34 @@ export const updatePassword = async (req: Request, res: Response) => {
 
         res.status(200).json({
             success: true, message: "Password updated successfully."
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const markNotificationsAsRead = async (req: Request, res: Response) => {
+    try {
+        let { notificationIds } = req.body;
+
+        if (!notificationIds) {
+            res.status(400).json({ success: false, message: "Notification ID(s) required" });
+            return
+        }
+
+        if (!Array.isArray(notificationIds)) {
+            notificationIds = [notificationIds];
+        }
+
+        const result = await Notification.updateMany(
+            { _id: { $in: notificationIds } },
+            { $set: { isRead: true } }
+        );
+
+        res.status(200).json({
+            success: true, message: `${result.modifiedCount} notification(s) marked as read.`,
         });
     } catch (error) {
         res.status(500).json({
