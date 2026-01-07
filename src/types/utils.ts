@@ -12,7 +12,8 @@ export interface SendMailOptions {
   to: string;
   subject: string;
   otp: string;
-  name: string
+  name: string;
+  templatePath: string;
 }
 
 declare global {

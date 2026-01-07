@@ -10,6 +10,7 @@ import { sendForgotPasswordEmail } from "../utils/sendForgotPasswordEmail";
 import { Guest } from "../models/guest";
 import { Admin } from "../models/admin";
 import { agenda } from "../jobs/agendaInstance";
+import { getTemplatePath } from "../utils/getTemplatePath";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -126,6 +127,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
             subject: "Your OTP Code",
             otp: OTP,
             name: user?.username,
+            templatePath: getTemplatePath("forgotPassword.html")
         });
         res
             .status(200)

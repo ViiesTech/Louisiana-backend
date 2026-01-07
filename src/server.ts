@@ -33,5 +33,5 @@ io.on("connection", (socket) => {
 })
 
 httpServer.listen(port, () => {
-    console.log(`Server started on ${ip}:${port}`);
+    console.log(`Server started on Port:${port}`);
 })

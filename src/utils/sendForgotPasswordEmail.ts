@@ -4,7 +4,7 @@ import path from 'path';
 import { SendMailOptions } from '../types';
 import { appEmail, appPassword } from '../config/env';
 
-export const sendForgotPasswordEmail = async ({ to, subject, otp, name }: SendMailOptions) => {
+export const sendForgotPasswordEmail = async ({ to, subject, otp, name , templatePath }: SendMailOptions) => {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -14,8 +14,8 @@ export const sendForgotPasswordEmail = async ({ to, subject, otp, name }: SendMa
       },
     });
 
-    const templatePath = path.join(__dirname, '../templates/forgotPassword.html');
-    let html = fs.readFileSync(templatePath, 'utf-8');
+    const resolvedTemplatePath = path.resolve(__dirname, templatePath);
+    let html = fs.readFileSync(resolvedTemplatePath, 'utf-8');
     html = html.replace('{{OTP}}', otp);
     html = html.replace('{{name}}', name);
 
