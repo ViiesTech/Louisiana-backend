@@ -35,6 +35,6 @@ router.delete("/itinerary/delete/:itineraryId", IsAuth, deleteItinerary);
 router.get("/", IsAuth, getUser);
 router.patch("/updateProfile", IsAuth, upload.single("profile"), updateProfile);
 router.patch("/updatePassword", IsAuth, validate(changePassValidation), updatePassword);
-router.put("/notifications/read", IsAuth , markNotificationsAsRead);
+router.put("/notifications/read", IsAuth, markNotificationsAsRead);
 
 export default router

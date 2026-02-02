@@ -11,6 +11,7 @@ import { Guest } from "../models/guest";
 import { Admin } from "../models/admin";
 import { agenda } from "../jobs/agendaInstance";
 import { getTemplatePath } from "../utils/getTemplatePath";
+import { createUrl } from "../utils/createUrl";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -26,11 +27,7 @@ export const signup = async (req: Request, res: Response) => {
             return;
         }
 
-        let profileUrl = "";
-        if (req.file) {
-            const baseUrl = `${req.protocol}://${req.get("host")}`;
-            profileUrl = `${baseUrl}/uploads/${req.file.filename}`;
-        }
+        const profileUrl = createUrl(req, req.file, "profile");
 
         const hashedPass = await createHashedPassword(password);
 
@@ -226,8 +223,15 @@ export const loginAsGuest = async (req: Request, res: Response) => {
             guest = await Guest.create({ email: lowerEmail });
         }
 
+        const obj = {
+            _id: guest._id.toString(),
+            email: guest.email,
+        };
+
+        const token = await createJWT(obj);
+
         res.status(200).json({
-            message: "Guest email saved successfully", success: true, guest
+            message: "Guest email saved successfully", success: true, guest, token
         });
     } catch (error) {
         res.status(500).json({

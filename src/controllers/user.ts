@@ -15,6 +15,7 @@ import { calculateDuration } from "../utils/calculateDuration";
 import { verifyHashedPass } from "../utils/verifyHashedPass";
 import { createHashedPassword } from "../utils/createHashedPassword";
 import { Notification } from "../models/notification";
+import { createUrl } from "../utils/createUrl";
 
 export const getCities = async (req: Request, res: Response) => {
     try {
@@ -635,11 +636,7 @@ export const updateProfile = async (req: Request, res: Response) => {
             return;
         }
 
-        let profileUrl = user.profile;
-        if (req.file) {
-            const baseUrl = `${req.protocol}://${req.get("host")}`;
-            profileUrl = `${baseUrl}/uploads/${req.file.filename}`;
-        }
+        const profileUrl = createUrl(req, req.file, "profile");
 
         if (latitude !== undefined || longitude !== undefined) {
             const currentLocation = user.location?.coordinates || [0, 0];

@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
-import { port } from "../config/env";
-import { getLocalIp } from "../utils/getLocalIp";
-
-const ip = getLocalIp()
+import { createUrl } from "../utils/createUrl";
+import { createUrls } from "../utils/createUrls";
 
 export const uploadImage = (req: Request, res: Response) => {
     try {
@@ -11,11 +9,9 @@ export const uploadImage = (req: Request, res: Response) => {
             return
         }
 
-        const baseUrl = ip ? `http://${ip}:${port}` : `http://localhost:${port}`;
+        const profileUrl = createUrl(req, req.file, "image");
 
-        const fileLink = `${baseUrl}/uploads/${req.file.filename}`;
-
-        res.status(200).json({ success: true, message: 'Image upload successfully', link: fileLink });
+        res.status(200).json({ success: true, message: 'Image upload successfully', link: profileUrl });
     } catch (error) {
         res.status(500).json({
             message: error instanceof Error ? error.message : "*Internal server error", success: false,
@@ -30,11 +26,7 @@ export const uploadMultipleImages = async (req: Request, res: Response) => {
             return
         }
 
-        const baseUrl = ip ? `http://${ip}:${port}` : `http://localhost:${port}`;
-
-        const fileLinks = req.files.map(
-            (file: Express.Multer.File) => `${baseUrl}/uploads/${file.filename}`
-        );
+        const fileLinks = createUrls(req, req.files as Express.Multer.File[], "images");
 
         res.status(200).json({ success: true, message: 'Images upload successfully', links: fileLinks });
     } catch (error) {
@@ -61,15 +53,8 @@ export const uploadMedia = async (req: Request, res: Response) => {
             });
         }
 
-        const baseUrl = ip ? `http://${ip}:${port}` : `http://localhost:${port}`;
-
-        const imageLinks = images.map(
-            (file) => `${baseUrl}/uploads/${file.filename}`
-        );
-
-        const videoLinks = videos.map(
-            (file) => `${baseUrl}/uploads/${file.filename}`
-        );
+        const imageLinks = createUrls(req, images, "images");
+        const videoLinks = createUrls(req, videos, "videos");
 
         res.status(200).json({
             success: true,
