@@ -28,7 +28,7 @@ export const getCities = async (req: Request, res: Response) => {
                 select: '-city',
                 populate: {
                     path: 'user',
-                    select: 'name profile email'
+                    select: '-password'
                 }
             })
 
@@ -53,7 +53,7 @@ export const getCities = async (req: Request, res: Response) => {
                     }
                 }
             })
-                .populate({ path: 'review', select: '-city', populate: { path: 'user', select: 'name profile email' } })
+                .populate({ path: 'review', select: '-city', populate: { path: 'user', select: '-password' } })
                 .populate('touristSpot', '-city');
 
             if (!cities.length) {
