@@ -12,16 +12,36 @@ export const getUserPopulate = [
         }
     },
     {
-        path: 'favouriteBusinesses', select: '-review'
-    },
-    {
-        path: 'favouriteCities', select: '-review -touristSpot'
-    },
-    {
-        path: 'visitedCities', select: '-review',
+        path: 'favouriteBusinesses',
         populate: {
-            path: 'touristSpot', select: '-city'
+            path: 'review',
+            populate: {
+                path: 'user', select: 'username email _id profile'
+            }
         }
+    },
+    {
+        path: 'favouriteCities', select: '-touristSpot',
+        populate: {
+            path: 'review',
+            populate: {
+                path: 'user', select: 'username email _id profile'
+            }
+        }
+    },
+    {
+        path: 'visitedCities',
+        populate: [
+            {
+                path: 'touristSpot', select: '-city'
+            },
+            {
+                path: 'review',
+                populate: {
+                    path: 'user', select: 'username email _id profile'
+                }
+            }
+        ]
     },
     {
         path: "itineraries",
@@ -30,6 +50,6 @@ export const getUserPopulate = [
         },
     },
     {
-        path:'notifications', select:"-user"
+        path: 'notifications', select: "-user"
     }
 ]
