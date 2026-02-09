@@ -18,7 +18,10 @@ export const getUserPopulate = [
         path: 'favouriteCities', select: '-review -touristSpot'
     },
     {
-        path: 'visitedCities', select: '-review -touristSpot'
+        path: 'visitedCities', select: '-review',
+        populate: {
+            path: 'touristSpot', select: '-city'
+        }
     },
     {
         path: "itineraries",
