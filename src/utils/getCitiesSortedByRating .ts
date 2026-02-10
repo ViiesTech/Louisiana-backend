@@ -1,7 +1,18 @@
 import { City } from "../models/city";
 
-export const getCitiesSortedByRating = async () => {
-    const cities = await City.aggregate([
+export const getCitiesSortedByRating = async (search?: string) => {
+    const pipeline: any[] = [];
+
+    // Add match stage for search if provided
+    if (search) {
+        pipeline.push({
+            $match: {
+                name: { $regex: search, $options: 'i' }
+            }
+        });
+    }
+
+    pipeline.push(
         // Lookup reviews
         {
             $lookup: {
@@ -108,7 +119,9 @@ export const getCitiesSortedByRating = async () => {
                 }
             }
         }
-    ]);
+    );
+
+    const cities = await City.aggregate(pipeline);
 
     return cities;
 };
