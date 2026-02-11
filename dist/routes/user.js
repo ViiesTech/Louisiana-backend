@@ -10,6 +10,7 @@ const validate_1 = require("../middleware/validate");
 const user_2 = require("../validations/user");
 const multerConfig_1 = __importDefault(require("../middleware/multerConfig"));
 const router = (0, express_1.Router)();
+router.get("/all-entities", isAuth_1.IsAuth, user_1.getAllData);
 router.get("/cities/all", isAuth_1.IsAuth, user_1.getCities);
 router.get("/city/:cityId", isAuth_1.IsAuth, user_1.getCities);
 router.get("/touristSpots/all", isAuth_1.IsAuth, user_1.getTouristSpots);

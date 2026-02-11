@@ -17,6 +17,7 @@
     "@types/nodemailer": "^7.0.3",
     "@types/otp-generator": "^4.0.2",
     "agenda": "^5.0.0",
+    "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",

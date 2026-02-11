@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { IsAuth } from "../middleware/isAuth";
-import { addBusinessReview, addCityReview, createItinerary, deleteBusinessReview, deleteCityReview, deleteItinerary, getBusiness, getCities, getTouristSpots, getUser, markNotificationsAsRead, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview, updateItinerary, updatePassword, updateProfile } from "../controllers/user";
+import { addBusinessReview, addCityReview, createItinerary, deleteBusinessReview, deleteCityReview, deleteItinerary, getAllData, getBusiness, getCities, getTouristSpots, getUser, markNotificationsAsRead, toggleFavouriteBusiness, toggleFavouriteCities, toggleVisitedCities, updateBusinessReview, updateCityReview, updateItinerary, updatePassword, updateProfile } from "../controllers/user";
 import { validate } from "../middleware/validate";
 import { changePassValidation, cityReviewValidation, createItineraryValidation } from "../validations/user";
 import upload from "../middleware/multerConfig";
 
 const router = Router()
+
+router.get("/all-entities", IsAuth, getAllData);
 
 router.get("/cities/all", IsAuth, getCities);
 router.get("/city/:cityId", IsAuth, getCities);

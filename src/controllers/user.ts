@@ -6,6 +6,7 @@ import { getCitiesSortedByRating } from "../utils/getCitiesSortedByRating ";
 import { TouristSpot } from "../models/touristSpot";
 import { Business } from "../models/business";
 import { BusinessReview } from "../models/businessReview";
+import { getDrivingDistances } from "../utils/calculateDistance";
 import mongoose from "mongoose";
 import { getUserPopulate } from "../utils/populateOption";
 import { sanitizeUser } from "../utils/sanitizeUser";
@@ -44,7 +45,7 @@ export const getCities = async (req: Request, res: Response) => {
         }
 
         if (latitude && longitude) {
-            const distance = Number(maxDistance) || 5000; // default 5 km
+            const distance = Number(maxDistance) || 20000; // default 20 km
             const query: any = {
                 location: {
                     $near: {
@@ -241,7 +242,7 @@ export const getBusiness = async (req: Request, res: Response) => {
                 select: '-business',
                 populate: {
                     path: 'user',
-                    select: 'name profile email'
+                    select: 'username profile email'
                 }
             })
 
@@ -271,7 +272,7 @@ export const getBusiness = async (req: Request, res: Response) => {
             select: '-business',
             populate: {
                 path: 'user',
-                select: 'name profile email'
+                select: 'username profile email'
             }
         }).sort({ createdAt: -1 })
 
@@ -753,6 +754,117 @@ export const markNotificationsAsRead = async (req: Request, res: Response) => {
     } catch (error) {
         res.status(500).json({
             success: false, message: error instanceof Error ? error.message : "Internal Server Error",
+        });
+    }
+};
+
+export const getAllData = async (req: Request, res: Response) => {
+    try {
+        const { latitude, longitude, maxDistance } = req.query;
+
+        const query: any = {};
+        if (latitude && longitude) {
+            const distance = Number(maxDistance) || 20000; // default 20 km
+            query.location = {
+                $near: {
+                    $geometry: { type: "Point", coordinates: [Number(longitude), Number(latitude)] },
+                    $maxDistance: distance,
+                }
+            };
+        }
+
+        const [cities, businesses, touristSpots] = await Promise.all([
+            City.find(query).populate({
+                path: 'review', select: '-city',
+                populate: {
+                    path: 'user', select: 'username profile email'
+                }
+            }).select('-touristSpot').sort(query.location ? {} : { createdAt: -1 }).lean(),
+            Business.find(query).populate({
+                path: 'review',
+                select: '-business',
+                populate: {
+                    path: 'user',
+                    select: 'username profile email'
+                }
+            }).sort(query.location ? {} : { createdAt: -1 }).lean(),
+            TouristSpot.find(query).select("-city").sort(query.location ? {} : { createdAt: -1 }).lean()
+        ]);
+
+        const combinedData = [
+            ...cities.map(item => ({ ...item, type: 'city' })),
+            ...businesses.map(item => ({ ...item, type: 'business' })),
+            ...touristSpots.map(item => ({ ...item, type: 'touristSpot' }))
+        ];
+
+        // calculate driving distance using google map api key
+
+        // if (latitude && longitude) {
+        //     const userLat = Number(latitude);
+        //     const userLon = Number(longitude);
+
+        //     const destinations = combinedData.map((item: any) => {
+        //         const itemLat = item.location?.coordinates[1];
+        //         const itemLon = item.location?.coordinates[0];
+        //         return (itemLat !== undefined && itemLon !== undefined)
+        //             ? { lat: itemLat, lng: itemLon }
+        //             : null;
+        //     });
+
+        //     // Filter out nulls but keep track of indices to map distances back
+        //     const validDestinations = destinations.filter((d): d is { lat: number, lng: number } => d !== null);
+
+        //     const distances = await getDrivingDistances({ lat: userLat, lng: userLon }, validDestinations);
+
+        //     let distanceCalculationFailed = false;
+        //     let distanceIndex = 0;
+        //     combinedData = combinedData.map((item: any, index: number) => {
+        //         if (destinations[index]) {
+        //             const distValue = distances[distanceIndex++];
+        //             if (distValue !== null) {
+        //                 // Format to 2 decimal places for better readability
+        //                 item.distance = Number(distValue.toFixed(2));
+        //             } else {
+        //                 item.distance = null;
+        //                 distanceCalculationFailed = true;
+        //             }
+        //         } else {
+        //             item.distance = null;
+        //         }
+        //         return item;
+        //     });
+
+        //     combinedData.sort((a: any, b: any) => {
+        //         if (a.distance === null) return 1;
+        //         if (b.distance === null) return -1;
+        //         return a.distance - b.distance;
+        //     });
+
+        //     // Append unit after sorting
+        //     combinedData = combinedData.map(item => ({
+        //         ...item,
+        //         distance: item.distance !== null ? `${item.distance} km` : null
+        //     }));
+
+        //     if (distanceCalculationFailed) {
+        //         console.log("Note: Some or all distances could not be calculated via Google Maps.");
+        //         return res.status(200).json({
+        //             success: true,
+        //             message: "All data fetched successfully, but distance calculation failed for some or all items.",
+        //             data: combinedData
+        //         });
+        //     }
+        // }
+
+        return res.status(200).json({
+            success: true,
+            message: "All data fetched successfully!",
+            data: combinedData
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error instanceof Error ? error.message : "Internal Server Error",
         });
     }
 };
