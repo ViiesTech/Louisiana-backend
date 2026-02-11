@@ -645,88 +645,74 @@ exports.markNotificationsAsRead = markNotificationsAsRead;
 const getAllData = async (req, res) => {
     try {
         const { latitude, longitude, maxDistance } = req.query;
-        const query = {};
-        if (latitude && longitude) {
-            const distance = Number(maxDistance) || 20000; // default 20 km
-            query.location = {
-                $near: {
-                    $geometry: { type: "Point", coordinates: [Number(longitude), Number(latitude)] },
-                    $maxDistance: distance,
-                }
-            };
-        }
+        const useGeoNear = latitude && longitude;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        const distance = Number(maxDistance) || 20000; // default 20 km
+        const getPipeline = () => {
+            const pipeline = [];
+            if (useGeoNear) {
+                pipeline.push({
+                    $geoNear: {
+                        near: { type: "Point", coordinates: [lng, lat] },
+                        distanceField: "distance",
+                        maxDistance: distance,
+                        spherical: true,
+                        distanceMultiplier: 0.001 // Convert meters to km
+                    }
+                });
+            }
+            return pipeline;
+        };
         const [cities, businesses, touristSpots] = await Promise.all([
-            city_1.City.find(query).populate({
+            city_1.City.aggregate(getPipeline()),
+            business_1.Business.aggregate(getPipeline()),
+            touristSpot_1.TouristSpot.aggregate(getPipeline())
+        ]);
+        // Populate the results manually since aggregate doesn't do it automatically
+        const [populatedCities, populatedBusinesses] = await Promise.all([
+            city_1.City.populate(cities, {
                 path: 'review', select: '-city',
                 populate: {
                     path: 'user', select: 'username profile email'
                 }
-            }).select('-touristSpot').sort(query.location ? {} : { createdAt: -1 }).lean(),
-            business_1.Business.find(query).populate({
+            }),
+            business_1.Business.populate(businesses, {
                 path: 'review',
                 select: '-business',
                 populate: {
                     path: 'user',
                     select: 'username profile email'
                 }
-            }).sort(query.location ? {} : { createdAt: -1 }).lean(),
-            touristSpot_1.TouristSpot.find(query).select("-city").sort(query.location ? {} : { createdAt: -1 }).lean()
+            })
         ]);
-        const combinedData = [
-            ...cities.map(item => ({ ...item, type: 'city' })),
-            ...businesses.map(item => ({ ...item, type: 'business' })),
-            ...touristSpots.map(item => ({ ...item, type: 'touristSpot' }))
+        let combinedData = [
+            ...populatedCities.map((item) => ({
+                ...item,
+                type: 'city',
+                distance: (item.distance != null) ? `${Number(item.distance).toFixed(2)} km` : null
+            })),
+            ...populatedBusinesses.map((item) => ({
+                ...item,
+                type: 'business',
+                distance: (item.distance != null) ? `${Number(item.distance).toFixed(2)} km` : null
+            })),
+            ...touristSpots.map((item) => ({
+                ...item,
+                type: 'touristSpot',
+                distance: (item.distance != null) ? `${Number(item.distance).toFixed(2)} km` : null
+            }))
         ];
-        // calculate driving distance using google map api key
-        // if (latitude && longitude) {
-        //     const userLat = Number(latitude);
-        //     const userLon = Number(longitude);
-        //     const destinations = combinedData.map((item: any) => {
-        //         const itemLat = item.location?.coordinates[1];
-        //         const itemLon = item.location?.coordinates[0];
-        //         return (itemLat !== undefined && itemLon !== undefined)
-        //             ? { lat: itemLat, lng: itemLon }
-        //             : null;
-        //     });
-        //     // Filter out nulls but keep track of indices to map distances back
-        //     const validDestinations = destinations.filter((d): d is { lat: number, lng: number } => d !== null);
-        //     const distances = await getDrivingDistances({ lat: userLat, lng: userLon }, validDestinations);
-        //     let distanceCalculationFailed = false;
-        //     let distanceIndex = 0;
-        //     combinedData = combinedData.map((item: any, index: number) => {
-        //         if (destinations[index]) {
-        //             const distValue = distances[distanceIndex++];
-        //             if (distValue !== null) {
-        //                 // Format to 2 decimal places for better readability
-        //                 item.distance = Number(distValue.toFixed(2));
-        //             } else {
-        //                 item.distance = null;
-        //                 distanceCalculationFailed = true;
-        //             }
-        //         } else {
-        //             item.distance = null;
-        //         }
-        //         return item;
-        //     });
-        //     combinedData.sort((a: any, b: any) => {
-        //         if (a.distance === null) return 1;
-        //         if (b.distance === null) return -1;
-        //         return a.distance - b.distance;
-        //     });
-        //     // Append unit after sorting
-        //     combinedData = combinedData.map(item => ({
-        //         ...item,
-        //         distance: item.distance !== null ? `${item.distance} km` : null
-        //     }));
-        //     if (distanceCalculationFailed) {
-        //         console.log("Note: Some or all distances could not be calculated via Google Maps.");
-        //         return res.status(200).json({
-        //             success: true,
-        //             message: "All data fetched successfully, but distance calculation failed for some or all items.",
-        //             data: combinedData
-        //         });
-        //     }
-        // }
+        if (useGeoNear) {
+            combinedData.sort((a, b) => {
+                const distA = a.distance ? parseFloat(a.distance) : Infinity;
+                const distB = b.distance ? parseFloat(b.distance) : Infinity;
+                return distA - distB;
+            });
+        }
+        else {
+            combinedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
         return res.status(200).json({
             success: true,
             message: "All data fetched successfully!",
