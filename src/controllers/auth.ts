@@ -12,6 +12,8 @@ import { Admin } from "../models/admin";
 import { agenda } from "../jobs/agendaInstance";
 import { getTemplatePath } from "../utils/getTemplatePath";
 import { createUrl } from "../utils/createUrl";
+import { getUserPopulate } from "../utils/populateOption";
+import { cleanItinerariesPlaces } from "../utils/cleanItineraries";
 
 export const signup = async (req: Request, res: Response) => {
     try {
@@ -52,9 +54,7 @@ export const signup = async (req: Request, res: Response) => {
 
         const token = await createJWT(obj);
 
-        const cleanUser = sanitizeUser(newUser, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
-        });
+        const cleanUser = sanitizeUser(newUser);
 
         res.status(201).json({
             message: "Signup successfully", success: true, user: cleanUser, token
@@ -71,7 +71,7 @@ export const signin = async (req: Request, res: Response) => {
 
         const lowerEmail = toLowerEmail(email);
 
-        const user = await User.findOne({ email: lowerEmail });
+        const user = await User.findOne({ email: lowerEmail }).populate(getUserPopulate).lean()
         if (!user) {
             res.status(404).json({
                 success: false, message: "*No account found with this email address.",
@@ -90,9 +90,8 @@ export const signin = async (req: Request, res: Response) => {
         const payload = { _id: user._id.toString(), email: user.email };
         const token = await createJWT(payload);
 
-        const cleanUser = sanitizeUser(user, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
-        });
+        user.itineraries = cleanItinerariesPlaces(user.itineraries, ["review", "touristSpot"]);
+        const cleanUser = sanitizeUser(user);
 
         return res.status(200).json({
             success: true, message: "Signin successful!", user: cleanUser, token,

@@ -14,6 +14,8 @@ const admin_1 = require("../models/admin");
 const agendaInstance_1 = require("../jobs/agendaInstance");
 const getTemplatePath_1 = require("../utils/getTemplatePath");
 const createUrl_1 = require("../utils/createUrl");
+const populateOption_1 = require("../utils/populateOption");
+const cleanItineraries_1 = require("../utils/cleanItineraries");
 const signup = async (req, res) => {
     try {
         const { username, email, password, latitude, longitude, personalization } = req.body;
@@ -44,9 +46,7 @@ const signup = async (req, res) => {
             email: newUser.email,
         };
         const token = await (0, createJWT_1.createJWT)(obj);
-        const cleanUser = (0, sanitizeUser_1.sanitizeUser)(newUser, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
-        });
+        const cleanUser = (0, sanitizeUser_1.sanitizeUser)(newUser);
         res.status(201).json({
             message: "Signup successfully", success: true, user: cleanUser, token
         });
@@ -62,7 +62,7 @@ const signin = async (req, res) => {
     try {
         const { email, password } = req.body;
         const lowerEmail = (0, toLowerEmail_1.toLowerEmail)(email);
-        const user = await user_1.User.findOne({ email: lowerEmail });
+        const user = await user_1.User.findOne({ email: lowerEmail }).populate(populateOption_1.getUserPopulate).lean();
         if (!user) {
             res.status(404).json({
                 success: false, message: "*No account found with this email address.",
@@ -78,9 +78,8 @@ const signin = async (req, res) => {
         }
         const payload = { _id: user._id.toString(), email: user.email };
         const token = await (0, createJWT_1.createJWT)(payload);
-        const cleanUser = (0, sanitizeUser_1.sanitizeUser)(user, {
-            remove: ['favouriteCities', 'visitedCities', 'favouriteBusinesses', 'cityReview', 'businessReview', 'itineraries', 'notifications']
-        });
+        user.itineraries = (0, cleanItineraries_1.cleanItinerariesPlaces)(user.itineraries, ["review", "touristSpot"]);
+        const cleanUser = (0, sanitizeUser_1.sanitizeUser)(user);
         return res.status(200).json({
             success: true, message: "Signin successful!", user: cleanUser, token,
         });

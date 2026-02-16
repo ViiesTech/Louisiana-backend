@@ -13,6 +13,7 @@ const user_1 = __importDefault(require("./routes/user"));
 const serveUploads_1 = require("./middleware/serveUploads");
 const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
+app.set("trust proxy", true);
 app.use((0, cors_1.default)());
 app.use(body_parser_1.default.json());
 // app.use("/uploads", express.static("uploads"));
